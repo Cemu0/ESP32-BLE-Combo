@@ -16,13 +16,14 @@ You might also be interested in:
 - [ESP32-BLE-Gamepad](https://github.com/lemmingDev/ESP32-BLE-Gamepad)
 
 # Small features
-This library support check keyboard status led.  
-If you need to switch between devices, check the 'testComboMultiple' example.  
+This library support check keyboard status led.   
+If you need to switch between devices, check the 'testComboMultiple' example.    
+On ESP32-C3, device not support Bluetooth5.0 won't work  
 
 # Example 
 Check the examples folder for more examples.
 
-```
+``` C++
 /**
  * This example turns the ESP32 into a Bluetooth LE keyboard and mouse
  */
