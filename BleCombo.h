@@ -152,8 +152,8 @@ private:
   std::string        deviceManufacturer;
   uint8_t _keyboardLedsStatus;
   uint8_t            batteryLevel;
-  size_t               connected = false;
-  uint32_t           _delay_ms = 2;
+  bool               connected = false;
+  uint32_t           _delay_ms = 7;
   void delay_ms(uint64_t ms);
   void buttons(uint8_t b);
 
@@ -161,9 +161,9 @@ private:
   uint16_t pid       = 0x820a;
   uint16_t version   = 0x0210;
 
-  // uint16_t vid_mouse       = 0xe502;
-  // uint16_t pid_mouse       = 0xa111;
-  // uint16_t version_mouse   = 0x0210;
+  uint16_t vid_mouse       = 0xe502;
+  uint16_t pid_mouse       = 0xa111;
+  uint16_t version_mouse   = 0x0210;
 
 public:
   BleCombo(std::string deviceName = "ESP32 Combo", std::string deviceManufacturer = "Espressif", uint8_t batteryLevel = 90);

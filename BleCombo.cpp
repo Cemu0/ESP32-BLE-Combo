@@ -156,14 +156,14 @@ void BleCombo::begin(void)
   hid->hidInfo(0x00, 0x01);
 
   hid_mouse->manufacturer()->setValue(deviceManufacturer);
-  hid_mouse->pnp(0x02, vid, pid, version);
-//   hid_mouse->pnp(0x02, vid_mouse, pid_mouse, version_mouse);
+//   hid_mouse->pnp(0x02, vid, pid, version);
+  hid_mouse->pnp(0x02, vid_mouse, pid_mouse, version_mouse);
   hid_mouse->hidInfo(0x00, 0x02);
 
   BLEDevice::setSecurityAuth(true, true, true);
 
-  hid->reportMap((uint8_t*)_hidReportDescriptorKeyboard, sizeof(_hidReportDescriptorKeyboard));
   hid_mouse->reportMap((uint8_t*)_hidReportDescriptorMouse, sizeof(_hidReportDescriptorMouse));
+  hid->reportMap((uint8_t*)_hidReportDescriptorKeyboard, sizeof(_hidReportDescriptorKeyboard));
   
   //oN ANDROID depend on what start first that will act first
   hid_mouse->startServices();
@@ -173,10 +173,14 @@ void BleCombo::begin(void)
 
   BLEAdvertising* advertising = pServer->getAdvertising();
   advertising->setAppearance(GENERIC_HID); 
-  advertising->addServiceUUID(hid->hidService()->getUUID());
   advertising->addServiceUUID(hid_mouse->hidService()->getUUID());
+  advertising->addServiceUUID(hid->hidService()->getUUID());
+//   advertising->setScanResponse(true); // this wont work if you use multiple devices
   advertising->setScanResponse(false);
+//   advertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+//   advertising->setMaxPreferred(0x12);	
   advertising->start();
+  
   hid->setBatteryLevel(batteryLevel);
   // hid_mouse->setBatteryLevel(batteryLevel);
 
@@ -185,8 +189,13 @@ void BleCombo::begin(void)
 
 void BleCombo::end(bool clearAll)
 {
-	delete hid;
-	delete hid_mouse;
+	BLEDevice::stopAdvertising();
+	BLEServer* pServer = BLEDevice::getServer();
+	if (pServer->getConnectedCount() > 0){
+		pServer->disconnect(pServer->getPeerIDInfo(0).getConnHandle());
+	}
+	// delete hid;
+	// delete hid_mouse;
 	BLEDevice::deinit(clearAll);
 }
 
@@ -592,8 +601,8 @@ void BleCombo::onStarted(BLEServer* pServer) {
 }
 
 void BleCombo::onConnect(BLEServer* pServer) {
-  	this->connected = pServer->getConnectedCount();
-	
+  	// this->connected = pServer->getConnectedCount();
+	this->connected = true;
 	// pServer->getAdvertising()->start(); //do it :D
 
 	// BLEDevice::getAddress();
@@ -601,17 +610,17 @@ void BleCombo::onConnect(BLEServer* pServer) {
 	
 	// pServer->disconnect(); // need test this
 
-	auto peer = pServer->getPeerInfo((this->connected)-1);
+	// auto peer = pServer->getPeerInfo((this->connected)-1);
 
 	// getConnHandle
 
 	// }
 
-	ESP_LOGD(LOG_TAG, "Connected to: %d",peer.getAddress());
-	ESP_LOGD(LOG_TAG, "latency %d ms",peer.getConnLatency());
+	// ESP_LOGD(LOG_TAG, "Connected to: %d",peer.getAddress());
+	// ESP_LOGD(LOG_TAG, "latency %d ms",peer.getConnLatency());
 	// if(this->connected == 0){
 		// BLEDevice::addIgnored(peer.getAddress());
-	ESP_LOGD(LOG_TAG, "Subscribed to Mouse: %d",inputMouse->getSubscribedCount());
+	// ESP_LOGD(LOG_TAG, "Subscribed to Mouse: %d",inputMouse->getSubscribedCount());
 		// inputMouse->setSubscribe(); //add or remove machine that connected 
 	// }
 	
@@ -620,7 +629,9 @@ void BleCombo::onConnect(BLEServer* pServer) {
 }
 void BleCombo::onDisconnect(BLEServer* pServer) {
 //   this->connected = false;
-  this->connected = pServer->getConnectedCount();
+//   this->connected = pServer->getConnectedCount();
+	this->connected = false;
+
 
 }
 
