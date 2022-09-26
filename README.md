@@ -1,7 +1,9 @@
 # ESP32 BLE Combo library
 Using Keyboard and Mouse at the same time 
 This use the NimBLE library as default 
-Also worked on ESP32-C3 
+Also worked on ESP32-C3. 
+
+This repo was mainly design for the [PC-HID-Extend](https://github.com/Cemu0/PC-HID-Extend) project to extend PC keyboard and mouse to other mobile device.
 
 # Usage
 
@@ -68,6 +70,7 @@ void loop() {
 - windows 10  
 - ios 16: note if you can't press the space button check [here](https://developer.apple.com/forums/thread/119022)
 - MacOS 12.6
+- IpadOS 15
 
 # Working not correct on
 - Android (6, 10) just detect keyboard/mouse if one of them shown up first in the begin function 
