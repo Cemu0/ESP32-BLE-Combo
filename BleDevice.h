@@ -64,6 +64,7 @@ private:
   std::string        deviceManufacturer;
   uint8_t           _keyboardLedsStatus;
   uint8_t            batteryLevel;
+  esp_power_level_t  pwrLevel;
   bool               connected = false;
   uint32_t           _delay_ms = 7;
   void delay_ms(uint64_t ms);
@@ -74,7 +75,8 @@ private:
   uint16_t version   = 0x0210;
 
 public:
-  BleDevice(std::string deviceName = "ESP32 Device", std::string deviceManufacturer = "Espressif", uint8_t batteryLevel = 100);
+  // max power level ESP_PWR_LVL_N3=-3dB, ESP_PWR_LVL_N0=0dB, *ESP_PWR_LVL_P3=3dB, ESP_PWR_LVL_P6=6dB, ESP_PWR_LVL_P9=9dB
+  BleDevice(std::string deviceName = "ESP32 Device", std::string deviceManufacturer = "Espressif", esp_power_level_t pwrLevel=ESP_PWR_LVL_P3, uint8_t batteryLevel=100 ) ;
   void init(void);
   void begin(bool _enableMouse=true, bool _enableKeyboard=true);
   void end(bool clearAll = false);

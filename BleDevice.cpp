@@ -1,11 +1,11 @@
 #include "BleDevice.h"
 
 // constructor
-BleDevice::BleDevice(std::string deviceName, std::string deviceManufacturer, uint8_t batteryLevel) 
-    : hid(0)
+BleDevice::BleDevice(std::string deviceName, std::string deviceManufacturer, esp_power_level_t pwrLevel, uint8_t batteryLevel ) 
+    : hid(0), hid_mouse(0)
     , deviceName(std::string(deviceName).substr(0, 15))
     , deviceManufacturer(std::string(deviceManufacturer).substr(0,15))
-    , batteryLevel(batteryLevel) {}
+    , pwrLevel(pwrLevel), batteryLevel(batteryLevel) {}
 
 // methods
 void BleDevice::begin(bool _enableMouse, bool _enableKeyboard)
@@ -37,7 +37,12 @@ void BleDevice::begin(bool _enableMouse, bool _enableKeyboard)
 		hid->hidInfo(0x00, 0x01);
 	}
 	
-	BLEDevice::setSecurityAuth(true, true, true);
+	// Passkey | Numerical | No-Input Pairing
+	BLEDevice::setSecurityAuth(true, false, true);
+
+	// Adjust powerlevel (default is 3db if commented out)
+	BLEDevice::setPower(pwrLevel);
+
 	// BLESecurity *pSecurity = new NimBLESecurity(); // NimBLE-Mouse does this
   	// pSecurity->setAuthenticationMode(ESP_LE_AUTH_BOND);
 
@@ -54,8 +59,8 @@ void BleDevice::begin(bool _enableMouse, bool _enableKeyboard)
 	onStarted(pServer);
 
 	BLEAdvertising* advertising = pServer->getAdvertising();
-	uint8_t symbol = enableMouse && enableKeyboard ? GENERIC_HID : (enableMouse ? HID_MOUSE : HID_KEYBOARD);
-	advertising->setAppearance(symbol); 
+	uint8_t icon = enableMouse && enableKeyboard ? GENERIC_HID : (enableMouse ? HID_MOUSE : HID_KEYBOARD);
+	advertising->setAppearance(icon); 
 	if( enableMouse )
 		advertising->addServiceUUID(hid_mouse->hidService()->getUUID());
 	if( enableKeyboard )
@@ -156,6 +161,7 @@ void BleDevice::sendReport(MediaKeyReport* keys)
 // call release(), releaseAll(), or otherwise clear the report and resend.
 size_t BleDevice::press(uint8_t k)
 {
+	if( !(enableKeyboard && connected) ) return 0;
 	uint8_t i;
 	if (k >= 136) {			// it's a non-printing key (not a modifier)
 		k = k - 136;
@@ -197,6 +203,7 @@ size_t BleDevice::press(uint8_t k)
 
 size_t BleDevice::press(const MediaKeyReport k)
 {
+	if( !(enableKeyboard && connected) ) return 0;
     uint16_t k_16 = k[1] | (k[0] << 8);
     uint16_t mediaKeyReport_16 = _mediaKeyReport[1] | (_mediaKeyReport[0] << 8);
 
@@ -213,6 +220,7 @@ size_t BleDevice::press(const MediaKeyReport k)
 // it shouldn't be repeated any more.
 size_t BleDevice::release(uint8_t k)
 {
+	if( !(enableKeyboard && connected) ) return 0;
 	uint8_t i;
 	if (k >= 136) {			// it's a non-printing key (not a modifier)
 		k = k - 136;
@@ -244,6 +252,7 @@ size_t BleDevice::release(uint8_t k)
 
 size_t BleDevice::release(const MediaKeyReport k)
 {
+	if( !(enableKeyboard && connected) ) return 0;
     uint16_t k_16 = k[1] | (k[0] << 8);
     uint16_t mediaKeyReport_16 = _mediaKeyReport[1] | (_mediaKeyReport[0] << 8);
     mediaKeyReport_16 &= ~k_16;
@@ -256,6 +265,7 @@ size_t BleDevice::release(const MediaKeyReport k)
 
 void BleDevice::releaseAll(void)
 {
+	if( !(enableKeyboard && connected) ) return;
 	_keyReport.keys[0] = 0;
 	_keyReport.keys[1] = 0;
 	_keyReport.keys[2] = 0;
@@ -275,6 +285,7 @@ bool BleDevice::getLedStatus(uint8_t led)
 
 size_t BleDevice::write(uint8_t c)
 {
+	if( !(enableKeyboard && connected) ) return 0;
 	uint8_t p = press(c);  // Keydown
 	release(c);            // Keyup
 	return p;              // just return the result of press() since release() almost always returns 1
@@ -282,12 +293,14 @@ size_t BleDevice::write(uint8_t c)
 
 size_t BleDevice::write(const MediaKeyReport c)
 {
+	if( !(enableKeyboard && connected) ) return 0;
 	uint16_t p = press(c);  // Keydown
 	release(c);            // Keyup
 	return p;              // just return the result of press() since release() almost always returns 1
 }
 
 size_t BleDevice::write(const uint8_t *buffer, size_t size) {
+	if( !(enableKeyboard && connected) ) return 0;
 	size_t n = 0;
 	while (size--) {
 		if (*buffer != '\r') {
@@ -304,15 +317,16 @@ size_t BleDevice::write(const uint8_t *buffer, size_t size) {
 
 void BleDevice::click(uint8_t b)
 {
-  _buttons = b;
-  move(0,0,0,0);
-  _buttons = 0;
-  move(0,0,0,0);
+	if( !(enableMouse && connected) ) return;
+	_buttons = b;
+	move(0,0,0,0);
+	_buttons = 0;
+	move(0,0,0,0);
 }
 
 void BleDevice::move(signed char x, signed char y, signed char wheel, signed char hWheel)
 {
-  if ( connected )
+  if( !(enableMouse && connected) ) return;
   {
     uint8_t m[5];
     m[0] = _buttons;
@@ -328,28 +342,32 @@ void BleDevice::move(signed char x, signed char y, signed char wheel, signed cha
 
 void BleDevice::buttons(uint8_t b)
 {
-  if (b != _buttons)
-  {
-    _buttons = b;
-    move(0,0,0,0);
-  }
+	if( !(enableMouse && connected) ) return;
+	if (b != _buttons)
+	{
+		_buttons = b;
+		move(0,0,0,0);
+	}
 }
 
 void BleDevice::mousePress(uint8_t b)
 {
-  buttons(_buttons | b);
+	if( !(enableMouse && connected) ) return;
+  	buttons(_buttons | b);
 }
 
 void BleDevice::mouseRelease(uint8_t b)
 {
-  buttons(_buttons & ~b);
+	if( !(enableMouse && connected) ) return;
+  	buttons(_buttons & ~b);
 }
 
 bool BleDevice::isPressed(uint8_t b)
 {
-  if ((b & _buttons) > 0)
-    return true;
-  return false;
+	if( !(enableMouse && connected) ) return false;
+  	if ((b & _buttons) > 0)
+    	return true;
+  	return false;
 }
 
 void BleDevice::onStarted(BLEServer* pServer) {
@@ -393,19 +411,19 @@ void BleDevice::onDisconnect(BLEServer* pServer) {
 }
 
 void BleDevice::onWrite(BLECharacteristic* me) {
-  uint8_t* value = (uint8_t*)(me->getValue().c_str());
-  (void)value;
-  _keyboardLedsStatus = *value;
-  ESP_LOGI(LOG_TAG, "special keys: %d", *value);
+	uint8_t* value = (uint8_t*)(me->getValue().c_str());
+	(void)value;
+	_keyboardLedsStatus = *value;
+	ESP_LOGI(LOG_TAG, "special keys: %d", *value);
 }
 
 void BleDevice::delay_ms(uint64_t ms) {
-  uint64_t m = esp_timer_get_time();
-  if(ms){
-    uint64_t e = (m + (ms * 1000));
-    if(m > e){ //overflow
-        while(esp_timer_get_time() > e) { taskYIELD();}
-    }
-    while(esp_timer_get_time() < e) {taskYIELD();}
-  }
+	uint64_t m = esp_timer_get_time();
+	if(ms){
+		uint64_t e = (m + (ms * 1000));
+		if(m > e){ //overflow
+			while(esp_timer_get_time() > e) { taskYIELD();}
+		}
+		while(esp_timer_get_time() < e) {taskYIELD();}
+	}
 }
