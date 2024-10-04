@@ -1,26 +1,20 @@
 # ESP32 BLE Combo library
-Using Keyboard and Mouse at the same time 
-This use the NimBLE library as default 
-Also worked on ESP32-C3. 
+This builds on the BLE-Combo library, and allows you to toggle keyboard, mouse or both. It will enable whichever you select.
+This is built on the NimBLE library.
 
-This repo was mainly design for the [PC-HID-Extend](https://github.com/Cemu0/PC-HID-Extend) project to extend PC keyboard and mouse to other mobile device.
+Build on the tweaks by ESP32-BLE-Combo.
 
 # Usage
+That was built on the hard work of:
+- [ESP32-BLE-Mouse](https://github.com/T-vK/ESP32-BLE-Mouse)
+- [ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard)
 
 You must [activate NimBLE](https://github.com/T-vK/ESP32-BLE-Keyboard#how-to-activate-nimble-mode) for this library to work
-
-This library have all the feature of the original library. Please check them for usage details:
-- [ESP32-BLE-Mouse](https://github.com/T-vK/ESP32-BLE-Mouse)
-- [ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard)  
-
-You might also be interested in:
-<!-- TODO: add this library into the combo library -->
-- [ESP32-BLE-Gamepad](https://github.com/lemmingDev/ESP32-BLE-Gamepad)
 
 # Small features
 This library support check keyboard status led.   
 If you need to switch between devices, check the 'testComboMultiple' example.    
-On ESP32-C3, device not support Bluetooth5.0 won't work  
+On ESP32-C3, there's no bluetooth, so this won't work.
 
 # Example 
 Check the examples folder for more examples.
@@ -30,21 +24,21 @@ Check the examples folder for more examples.
  * This example turns the ESP32 into a Bluetooth LE keyboard and mouse
  */
 #include <Arduino.h>
-#include <BleCombo.h>
+#include <BleDevice.h>
 
-BleCombo bleCombo;
+BleDevice bleDevice("Device Name","Device Corp");
 
 void setup() {
   pinMode(2,OUTPUT);
   Serial.begin(115200);
-  bleCombo.begin();
+  bleDevice.begin();
   Serial.println("Starting BLE work!");
 }
 
 void loop() {
-  if(bleCombo.isConnected()) {
+  if(bleDevice.isConnected()) {
     
-    bleCombo.print("Hello world");
+    bleDevice.print("Hello world");
     unsigned long startTime;
 
     Serial.println("Scroll up");
@@ -52,13 +46,13 @@ void loop() {
 
     while(millis()<startTime+4000) {
       Serial.println("up");
-      bleCombo.move(0,0,-1);
+      bleDevice.move(0,0,-1);
       delay(100);
     }
 
-    bleCombo.mousePress(MOUSE_LEFT);
+    bleDevice.mousePress(MOUSE_LEFT);
     delay(500);
-    bleCombo.mouseRelease(MOUSE_LEFT);
+    bleDevice.mouseRelease(MOUSE_LEFT);
 
   }
 
