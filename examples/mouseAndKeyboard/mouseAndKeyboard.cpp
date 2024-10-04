@@ -2,38 +2,27 @@
  * This example turns the ESP32 into a Bluetooth LE keyboard and mouse
  */
 #include <Arduino.h>
-#include <BleCombo.h>
+#include "BleDevice.h"
 
-BleCombo bleCombo;
+BleDevice bleDevice("Device Name","Device Corp");
 
 void setup() {
-  pinMode(2,OUTPUT);
   Serial.begin(115200);
-  bleCombo.begin();
+  bleDevice.begin(true,true);
+
   Serial.println("Starting BLE work!");
 }
 
 void loop() {
-  if(bleCombo.isConnected()) {
+  if(bleDevice.isConnected()) {
     
-    bleCombo.print("Hello world");
-    unsigned long startTime;
-
-    Serial.println("Scroll up");
-    startTime = millis();
-
-    while(millis()<startTime+4000) {
-      Serial.println("up");
-      bleCombo.move(0,0,-1);
-      delay(100);
-    }
-
-    bleCombo.mousePress(MOUSE_LEFT);
-    delay(500);
-    bleCombo.mouseRelease(MOUSE_LEFT);
-
+    bleDevice.write(KEY_RETURN);
+    // bleDevice.write(KEY_MEDIA_PLAY_PAUSE);
+    bleDevice.print("Hello world");
+    
+    delay(10000);
+  } else {
+    printf( "-\n");
+    delay(2000);
   }
-
-  Serial.println("Waiting 10 seconds...");
-  delay(10000);
 }
