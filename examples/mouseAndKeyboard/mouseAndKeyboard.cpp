@@ -1,39 +1,43 @@
-/**
- * This example turns the ESP32 into a Bluetooth LE keyboard and mouse
- */
 #include <Arduino.h>
-#include <BleCombo.h>
+#include "BleDevice.h"
 
-BleCombo bleCombo;
+std::string deviceName = "MouseKeyboard";
+std::string deviceCorp = "Microsoft";
+// instantiate class with settings
+BleDevice bleDevice(deviceName, deviceCorp, ESP_PWR_LVL_P3); // @ 3dB transmit power
+
+static int movement = 4;
 
 void setup() {
-  pinMode(2,OUTPUT);
   Serial.begin(115200);
-  bleCombo.begin();
-  Serial.println("Starting BLE work!");
+  delay(3000);
+  printf("Starting\n");
+
+  bool enableMouse = true;
+  bool enableKeyboard = true;
+  // start device, enabling mouse and/or keyboard...
+  bleDevice.begin(enableMouse,enableKeyboard);
+  printf( "[%s]: enabled with %s%s", deviceName.c_str(), enableMouse ? "[Mouse]" : "", enableKeyboard ? " [Keyboard]" : "" );
 }
 
 void loop() {
-  if(bleCombo.isConnected()) {
+  if(bleDevice.isConnected()) {
     
-    bleCombo.print("Hello world");
-    unsigned long startTime;
+    // bleDevice.mousePress(MOUSE_LEFT);
+    // bleDevice.mouseRelease(MOUSE_LEFT);
+    // bleDevice.write(KEY_RETURN);
+    // bleDevice.write(KEY_MEDIA_PLAY_PAUSE);
+    // bleDevice.print("Hello world");
+    bleDevice.print("~");
+    bleDevice.write(KEY_CAPS_LOCK);
+    bleDevice.move(movement, 0);
+    movement = -movement;
+    printf( " .. attempted typing ~ and moving mouse...\n");
 
-    Serial.println("Scroll up");
-    startTime = millis();
-
-    while(millis()<startTime+4000) {
-      Serial.println("up");
-      bleCombo.move(0,0,-1);
-      delay(100);
-    }
-
-    bleCombo.mousePress(MOUSE_LEFT);
-    delay(500);
-    bleCombo.mouseRelease(MOUSE_LEFT);
-
+    delay(5000);
+    
+  } else {
+    printf( "-\n");
+    delay(2000);
   }
-
-  Serial.println("Waiting 10 seconds...");
-  delay(10000);
 }

@@ -2,36 +2,40 @@
  * This example check the BLE keyboard leds
  */
 #include <Arduino.h>
-#include <BleCombo.h>
+#include "BleDevice.h"
 
-BleCombo bleCombo;
+BleDevice bleDevice("Device Name","Device Corp");
 
 void setup() {
   pinMode(2,OUTPUT);
   Serial.begin(115200);
   Serial.println("Starting BLE work!");
-  bleCombo.begin();
+  // just keyboard
+  bleDevice.begin(false,true);
 }
 
 void loop() {
-  if(bleCombo.isConnected()) {
-    digitalWrite(2,bleCombo.getLedStatus(LED_CAPS_LOCK));
-    if (bleCombo.getLedStatus(LED_CAPS_LOCK))
+  if(bleDevice.isConnected()) {
+    digitalWrite(2,bleDevice.getLedStatus(LED_CAPS_LOCK));
+    if (bleDevice.getLedStatus(LED_CAPS_LOCK))
     {
       Serial.print("Cap Lock on ");
     }
-    if (bleCombo.getLedStatus(LED_SCROLL_LOCK))
+    if (bleDevice.getLedStatus(LED_SCROLL_LOCK))
     {
       Serial.print("Scroll Lock on ");
     }
-      if (bleCombo.getLedStatus(LED_NUM_LOCK))
+      if (bleDevice.getLedStatus(LED_NUM_LOCK))
     {
       Serial.print("Num Lock on ");
     }
     // bleKeyboard.write('a');
-    bleCombo.print("Hello");
+    bleDevice.print("Hello");
+    delay(10000);
+    
+  } else {
+    printf( "-\n");
+    delay(2000);
   }
-
-  // Serial.println("Waiting 5 seconds...");
-  delay(10000);
+  
 }
